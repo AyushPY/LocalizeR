@@ -14,7 +14,7 @@ namespace LocalizeR.Core.Identity
         public List<Rating> Ratings { get; set; }
 
         public int? ServiceId { get; set; }
-
+        public string? RefreshToken { get; set; }
     }
 
 }

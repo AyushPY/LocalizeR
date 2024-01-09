@@ -1,6 +1,7 @@
 ﻿using LocalizeR.Core.DTO;
 using LocalizeR.Core.Enums;
 using LocalizeR.Core.Identity;
+using LocalizeR.Core.ServiceContracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,13 +15,15 @@ namespace LocalizeR.WebAPI.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly IJwtService _jwtService;
 
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, RoleManager<ApplicationRole> roleManager)
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, RoleManager<ApplicationRole> roleManager, IJwtService jwtService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
+            _jwtService = jwtService;
 
         }
         [HttpPost("RegisterUser")]
@@ -54,7 +57,8 @@ namespace LocalizeR.WebAPI.Controllers
                 }
                 await _userManager.AddToRoleAsync(user, UserType.User.ToString());
                 await _signInManager.SignInAsync(user, isPersistent: false);
-                return Ok(user);
+                var authenticationResponse = _jwtService.CreateJwtToken(user);
+                return Ok(authenticationResponse);
             }
             else
             {
@@ -123,7 +127,8 @@ namespace LocalizeR.WebAPI.Controllers
                 }
                 await _userManager.AddToRoleAsync(serviceprovider, UserType.ServiceProvider.ToString());
                 await _signInManager.SignInAsync(serviceprovider, isPersistent: false);
-                return Ok(serviceprovider);
+                var authenticationResponse = _jwtService.CreateJwtToken(serviceprovider);
+                return Ok(authenticationResponse);
             }
             else
             {
@@ -165,7 +170,8 @@ namespace LocalizeR.WebAPI.Controllers
                 var result = await _signInManager.PasswordSignInAsync(loginDTO.UserName, loginDTO.Password, isPersistent: false, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    return Ok(new { username = user.UserName, email = user.Email });
+                    var authenticationResponse = _jwtService.CreateJwtToken(user);
+                    return Ok(authenticationResponse);
                 }
                 else
                 {
