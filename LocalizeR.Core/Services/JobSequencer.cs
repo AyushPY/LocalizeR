@@ -1,37 +1,54 @@
-﻿using LocalizeR.Core.Models;
-using LocalizeR.Core.ServiceContracts;
+﻿using LocalizeR.Core.ServiceContracts;
+using RepositoryContracts;
+using RepositoryContracts.Models;
 
 namespace LocalizeR.Core.Services
 {
     public class JobSequencer : IJobSequencer
     {
-        public async Task<List<(BudgetDeadlinePair Job, Guid RequesterId)>> SequenceJobs(List<BudgetDeadlinePair> input)
+        private readonly IUserRequestsRepository _requestUsers;
+        public JobSequencer(IUserRequestsRepository requestUsers)
         {
-            var sortedInput = input.OrderByDescending(item => item.budget)
-                           .ThenBy(item => item.deadline)
-                           .ToList();
+            _requestUsers = requestUsers;
+        }
+        public async Task<List<BudgetDTO>> SequenceJobs(Guid serviceId)
+        {
+            var input = new List<BudgetDTO>();
+            input = await _requestUsers.GetUserRequestsByServiceID(serviceId);
 
-            // Initialize variables to track scheduled jobs and their completion times
-            var scheduledJobs = new List<(BudgetDeadlinePair Job, Guid RequesterId)>();
+            // Perform job sequencing logic
+            var optimizedResult = new List<BudgetDTO>();
+
+            // Sort input based on both budget (ascending) and deadline (ascending)
+            var sortedInput = input.OrderBy(r => r.budget).ThenBy(r => r.deadline).ToList();
+
+            // Perform job sequencing logic (a simple example)
             var completionTimes = new List<DateTime>();
 
-            foreach (var job in sortedInput)
+            foreach (var request in sortedInput)
             {
-                // Find the earliest available time slot for the job
-                var earliestTimeSlot = FindEarliestTimeSlot((DateTime)job.deadline, completionTimes);
+                var earliestTimeSlot = FindEarliestTimeSlot((DateTime)request.deadline, completionTimes);
 
-                // Schedule the job and update the completion time
-                scheduledJobs.Add((new BudgetDeadlinePair
+                // Perform any additional sequencing logic here
+
+                // Update completion times
+                completionTimes.Add(earliestTimeSlot.AddHours(1)); // Assuming each job takes 1 hour
+
+                // Create optimized BudgetDTO
+                var optimizedItem = new BudgetDTO
                 {
-                    budget = job.budget,
-                    deadline = job.deadline,
-                    requesterID = job.requesterID
-                }, job.requesterID));
+                    budget = request.budget,
+                    deadline = request.deadline,
+                    requesterID = request.requesterID,
+                    severity = request.severity,
+                    requesterUsername = request.requesterUsername
+                };
 
-                completionTimes.Add(earliestTimeSlot);
+                optimizedResult.Add(optimizedItem);
             }
 
-            return scheduledJobs;
+            return optimizedResult;
+
         }
         private DateTime FindEarliestTimeSlot(DateTime deadline, List<DateTime> completionTimes)
         {

@@ -9,6 +9,5 @@
         public Guid Id { get; set; } = Guid.Empty;
 
         public DateTime ExpirationTime { get; set; }
-        public string? RefreshToken { get; set; } = string.Empty;
     }
 }

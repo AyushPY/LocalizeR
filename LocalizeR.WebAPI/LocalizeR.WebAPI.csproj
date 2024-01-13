@@ -21,6 +21,8 @@
   <ItemGroup>
     <ProjectReference Include="..\LocalizeR.Core\LocalizeR.Core.csproj" />
     <ProjectReference Include="..\LocalizeR.Infrastructure\LocalizeR.Infrastructure.csproj" />
+    <ProjectReference Include="..\Repositories\Repositories.csproj" />
+    <ProjectReference Include="..\RepositoryContracts\RepositoryContracts.csproj" />
   </ItemGroup>
 
 </Project>

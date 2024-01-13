@@ -15,7 +15,7 @@ namespace LocalizeR.Core.Services
 
             //Load model and predict output
             var result = RequestClassifierModel.Predict(sampleData);
-            string severity = result.PredictedLabel.ToString();
+            string severity = result.PredictedLabel;
             return severity;
         }
 

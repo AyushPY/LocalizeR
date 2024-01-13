@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Repositories;
+using RepositoryContracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +73,9 @@ builder.Services.AddAuthentication(options =>
     };
 });
 builder.Services.AddAuthorization();
+builder.Services.AddTransient<IRatingsStats, RatingStatistics>();
+builder.Services.AddTransient<IUserRequestsRepository, UserRequestsRepository>();
+builder.Services.AddTransient<IServiceProviderInfo, ServiceProviderInfoRepository>();
 var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();

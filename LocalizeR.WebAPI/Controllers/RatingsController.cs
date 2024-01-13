@@ -1,5 +1,6 @@
 ﻿using LocalizeR.Core.DTO;
 using LocalizeR.Core.Entities;
+using LocalizeR.Core.Identity;
 using LocalizeR.Core.ServiceContracts;
 using LocalizeR.Infrastructure.DatabaseContext;
 using Microsoft.AspNetCore.Authorization;
@@ -15,11 +16,13 @@ namespace LocalizeR.WebAPI.Controllers
         private readonly ISimilarityCalculator _similarityCalculator;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<RatingsController> _logger;
-        public RatingsController(ISimilarityCalculator similarityCalculator, ApplicationDbContext context, ILogger<RatingsController> logger)
+        private readonly IRatingsStats _ratngStats;
+        public RatingsController(ISimilarityCalculator similarityCalculator, ApplicationDbContext context, ILogger<RatingsController> logger, IRatingsStats ratngStats)
         {
             _similarityCalculator = similarityCalculator;
             _context = context;
             _logger = logger;
+            _ratngStats = ratngStats;
         }
         [HttpPost("PearsonSimilarityCalculation")]
         public async Task<IActionResult> PearsonSimilarityCalculation(RatingDTO ratingDTO)
@@ -48,7 +51,8 @@ namespace LocalizeR.WebAPI.Controllers
                 await _context.RatingValues.AddAsync(ratingData);
                 result = await _context.SaveChangesAsync();
             }
-            List<(double Similarity, Guid ServiceId)> allSimilarities = new List<(double, Guid)>();
+            List<SimilaritiesStatisticsDTO> allSimilarities = new List<SimilaritiesStatisticsDTO>();
+            List<RatingStatisticsDTO> allStatistics = new List<RatingStatisticsDTO>();
             if (result > 0)
             {
                 if (location == null)
@@ -106,23 +110,30 @@ namespace LocalizeR.WebAPI.Controllers
                                 return Problem("Error while collecting Rating values");
                             }
 
-                            valuestoCalculate.Add(ratingsForService);
-
-                        }
-                        if (valuestoCalculate == null)
-                        {
-                            return Problem("No Associated Values Found");
-                        }
-                        foreach (var serviceId in matchingServiceIds)
-                        {
-                            var similarities = await _similarityCalculator.CalculateSimilarity(ratingValues, new List<(List<List<double>> Values, Guid ServiceId)> { (valuestoCalculate, serviceId) });
+                            if (valuestoCalculate == null)
+                            {
+                                return Problem("No Associated Values Found");
+                            }
+                            var similarities = await _similarityCalculator.CalculateSimilarity(ratingValues, new List<(List<double> Values, Guid ServiceId)> { (ratingsForService, serviceId) });
+                            var ratingStats = await _ratngStats.CalculateRatingStatisticsAsync(new List<(List<double> Values, Guid ServiceId)> { (ratingsForService, serviceId) });
                             allSimilarities.AddRange(similarities);
+                            allStatistics.AddRange(ratingStats);
                         }
-                    }
 
-                    if (allSimilarities != null)
+
+                    }
+                    var serviceProviderIds = allSimilarities.Select(s => s.ServiceId).ToList();
+                    List<ApplicationUser> filteredUsers = _context.Users.Where(user => serviceProviderIds.Contains(user.Id)).ToList();
+                    if (allSimilarities != null && allStatistics != null)
                     {
-                        return Ok("Similarity Calculated");
+                        var responseDTO = new RatingResponseDTO
+                        {
+                            AllSimilarities = allSimilarities,
+                            RatingStats = allStatistics,
+                            serviceProvider = filteredUsers
+                        };
+
+                        return Ok(responseDTO);
                     }
 
                 }

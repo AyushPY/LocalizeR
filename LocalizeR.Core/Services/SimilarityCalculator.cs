@@ -1,36 +1,27 @@
-﻿using LocalizeR.Core.ServiceContracts;
+﻿using LocalizeR.Core.DTO;
+using LocalizeR.Core.ServiceContracts;
 
 namespace LocalizeR.Core.Services
 {
     public class SimilarityCalculator : ISimilarityCalculator
     {
 
-        public async Task<List<(double Similarity, Guid ServiceId)>> CalculateSimilarity(List<double> ratedUser, List<(List<List<double>> Y, Guid ServiceId)> otherUsers)
+        public async Task<List<SimilaritiesStatisticsDTO>> CalculateSimilarity(List<double> ratedUser, List<(List<double> Y, Guid ServiceId)> otherUsers)
         {
-            List<(double Similarity, Guid ServiceId)> similarityResults = new List<(double Similarity, Guid ServiceId)>();
-            HashSet<(List<List<double>> YValues, Guid ServiceId)> processedCombos = new HashSet<(List<List<double>> YValues, Guid ServiceId)>();
+            List<SimilaritiesStatisticsDTO> similarityResults = new List<SimilaritiesStatisticsDTO>();
 
-            foreach (var (YValues, serviceId) in otherUsers)
+            SimilaritiesStatisticsDTO similaritiesStatisticsDTO = null;
+            foreach (var (Y, serviceId) in otherUsers)
             {
-                var combo = (YValues, serviceId);
-
-                if (processedCombos.Contains(combo))
-                {
-                    continue; // Skip if similarity for this combo has already been calculated
-                }
-
-                double totalSimilarity = 0.0;
-
-                foreach (var Y in YValues)
-                {
-                    totalSimilarity += CalculatePearsonCorrelation(ratedUser, Y);
-                }
-
-                similarityResults.Add((totalSimilarity, serviceId));
-                processedCombos.Add(combo);
+                double similarity = 0.0;
+                similaritiesStatisticsDTO = new SimilaritiesStatisticsDTO();
+                similaritiesStatisticsDTO.ServiceId = serviceId;
+                similarity = CalculatePearsonCorrelation(ratedUser, Y);
+                similaritiesStatisticsDTO.Similarity = similarity;
+                similarityResults.Add(similaritiesStatisticsDTO);
             }
 
-            similarityResults = similarityResults.OrderBy(result => result.Similarity).ToList();
+
 
             return similarityResults;
         }

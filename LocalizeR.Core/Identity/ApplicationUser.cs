@@ -12,9 +12,7 @@ namespace LocalizeR.Core.Identity
         public byte[]? ImageData { get; set; }
         public string? ServiceType { get; set; }
         public List<Rating> Ratings { get; set; }
-
         public int? ServiceId { get; set; }
-        public string? RefreshToken { get; set; }
     }
 
 }

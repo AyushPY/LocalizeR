@@ -170,12 +170,13 @@ namespace LocalizeR.WebAPI.Controllers
                 var result = await _signInManager.PasswordSignInAsync(loginDTO.UserName, loginDTO.Password, isPersistent: false, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
+                    await _signInManager.SignInAsync(user, isPersistent: false);
                     var authenticationResponse = _jwtService.CreateJwtToken(user);
                     return Ok(authenticationResponse);
                 }
                 else
                 {
-                    return Problem("Invalid Email Or Password");
+                    return Problem("Invalid Username Or Password");
                 }
 
             }

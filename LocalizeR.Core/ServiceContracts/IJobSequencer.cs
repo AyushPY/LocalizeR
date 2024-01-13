@@ -1,9 +1,9 @@
-﻿using LocalizeR.Core.Models;
+﻿using RepositoryContracts.Models;
 
 namespace LocalizeR.Core.ServiceContracts
 {
     public interface IJobSequencer
     {
-        Task<List<(BudgetDeadlinePair Job, Guid RequesterId)>> SequenceJobs(List<BudgetDeadlinePair> input);
+        Task<List<BudgetDTO>> SequenceJobs(Guid serviceId);
     }
 }
